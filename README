@@ -1,0 +1,88 @@
+READ ME
+
+This software will help to automate the bulk downloading of SRA files from NCBI to a SLURM cluster using the SRA Toolkit.
+
+
+STEP 1
+
+Create a conda environment called 'sra_env' with python 3 & install the SRA Toolkit
+
+	conda create --name sra_env python=3
+	conda activate sra_env
+	conda install -c bioconda sra-tools
+
+
+
+STEP 2
+
+Place all scripts in the same directory & run the setup.
+
+	python sra_pipe.py -setup
+
+
+
+STEP 3
+
+Move the accession list file to the accessions directory.
+
+	~/sra_download/accessions/SraAccList.txt
+
+Example list format:
+
+	SRR0000001
+	SRR0000002
+	SRR0000003
+	...
+
+N.B. at the time of writing it was possible to easily obtain such lists via https://www.ncbi.nlm.nih.gov/sra/ by searching for samples & then clicking "Send to" -> "File" -> "Accession list" -> "Create File" in the drop down menu.
+
+
+
+STEP 4
+
+Run stage 1 to download sra files via SRA Toolkit's prefetch command.
+
+	python sra_pipe.py -stage 1
+
+N.B. sometimes downloads will encounter a "Cannot KStreamRead" error; submitting with the optional "-buddy" flag will also submit sra_buddy.py that regularly monitors tasks & automatically re-submits those that fail because of this.
+
+
+
+STEP 5
+
+Run stage 2 to convert sra files to fastq files via SRA Toolkit's fasterq-dump command with default settings (equivalent to --split-3 & --skip-technical). A fastq extension will also be added to any extension-less files & all fastqs will then be compressed via gunzip.
+
+	python sra_pipe.py -stage 2
+
+
+
+CHECKING TASK PROGRESS / ACCOUNTING DATA
+
+As tasks are being processed the progress of output files & SLURM accounting data can be monitored via the appropriate flags.
+
+	python sra_pipe.py -stage 1 -progress
+	python sra_pipe.py -stage 1 -accounting
+
+
+
+ADDITIONAL SETTINGS
+
+Various other settings can also be changed from their defaults:
+
+FLAG		DEFAULT
+
+-overwrite	overwrite existing files
+-pipe		submit pipeline itself so new tasks can be submitted from the hpcc when possible (useful when many accessions)
+-u <name>	find current user
+-p </path/to/>	find home directory
+-d <name>	sra_download as working directory
+-a <name>	SraAccList.txt as accession list file
+-e <name>	sra_env as conda environment name
+-l <number>	100 parellel task limit 
+
+-pa <name>	defq partition (specific to the UoN hpcc augusta)
+-no <number>	1 node
+-nt <number>	1 ntask
+-me <number[k|m|g|t]>	4g memory
+-wt <HH:MM:SS>	24:00:00 walltime
+
