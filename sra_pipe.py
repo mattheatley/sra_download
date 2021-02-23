@@ -173,48 +173,47 @@ else:
                     else: # proceed with submitting tasks
 
                         if len(scripts) > limit and not submitting_self: # check tasks being submitted not excessive
-                            print(f'\nThe number of tasks ({len(scripts)}) exceeds the parallel task limit ({limit});  either increase the limit or re-submit the pipeline as a batch job.\n')
+                            print(f'\nThe number of tasks ({len(scripts)}) exceeds the parallel task limit ({limit});  either increase the limit or re-submit the pipeline as a batch job.')
+
+                        if submitting_self: # proceed with submiting self so tasks can be submitted from hpcc
+
+                            sh_script = f'{sh_dir}/pipe.sh'
+                            with open(sh_script, 'w') as sh:  
+
+                                hpcc_directives = SBATCH(job_id='pipe', partition=partition, nodes=1, ntasks=1, memory='2g', walltime='168:00:00', out_err=oe_dir, conda_env=environment) # specify hpcc directives (slurm)
+                                sh.write(hpcc_directives)                
+                                
+                                arguments.remove(pipe_flag) # remove self submission flag
+                                print('python', pipe_script, *arguments, sep=' ', file=sh) # submit self as task
+                            pipe_id = CAPTURE(f'sbatch {sh_script}')
+                            print(f'PIPELINE SUBMITTED ({pipe_id})')
 
                         else:
-                            if submitting_self: # proceed with submiting self so tasks can be submitted from hpcc
+                            print('\nSUBMITTING TASKS...')
+                            
+                            with open(id_file, 'a+' if resubmitting  else 'w') as id_output:
+                                for i,script in enumerate(scripts,1): 
+                                    ezSub(i=i, user=user, limit=limit) # maintain tasks below parellel task limit
+                                    sub_id = CAPTURE(f'sbatch -d singleton {script}') # submit task
+                                    print(sub_id, script, sep='\t', file=id_output, flush=True) # record task job id & shell script
+                            
+                            print('\nALL TASKS SUBMITTED\n')
 
-                                    sh_script = f'{sh_dir}/pipe.sh'
-                                    with open(sh_script, 'w') as sh:  
+                            if stage == 1 and submitting_buddy: # proceed with submitting sra buddy
+                            
+                                buddy_num = int(CAPTURE(f'squeue -u {user} | grep -c "buddy"')) # find any sra buddy scripts already submitted
+                            
+                                if buddy_num == 0: # # proceed with submitting sra buddy if not alredy submitted
+                            
+                                    sh_script = f'{sh_dir}/buddy.sh'
+                                    with open (sh_script,'w') as sh:
 
-                                        hpcc_directives = SBATCH(job_id='pipe', partition=partition, nodes=1, ntasks=1, memory='2g', walltime='168:00:00', out_err=oe_dir, conda_env=environment) # specify hpcc directives (slurm)
+                                        hpcc_directives = SBATCH(job_id='buddy', partition=partition, nodes=1, ntasks=1, memory='2g', walltime='168:00:00', out_err=oe_dir, conda_env=environment) # specify hpcc directives (slurm)
                                         sh.write(hpcc_directives)                
                                         
-                                        arguments.remove(pipe_flag) # remove self submission flag
-                                        print('python', pipe_script, *arguments, sep=' ', file=sh) # submit self as task
-                                    pipe_id = CAPTURE(f'sbatch {sh_script}')
-                                    print(f'PIPELINE SUBMITTED ({pipe_id})')
-
-                            else:
-                                print('\nSUBMITTING TASKS...')
-                                
-                                with open(id_file, 'a+' if resubmitting  else 'w') as id_output:
-                                    for i,script in enumerate(scripts,1): 
-                                        ezSub(i=i, user=user, limit=limit) # maintain tasks below parellel task limit
-                                        sub_id = CAPTURE(f'sbatch -d singleton {script}') # submit task
-                                        print(sub_id, script, sep='\t', file=id_output, flush=True) # record task job id & shell script
-                                
-                                print('\nALL TASKS SUBMITTED\n')
-
-                                if stage == 1 and submitting_buddy: # proceed with submitting sra buddy
-                                
-                                    buddy_num = int(CAPTURE(f'squeue -u {user} | grep -c "buddy"')) # find any sra buddy scripts already submitted
-                                
-                                    if buddy_num == 0: # # proceed with submitting sra buddy if not alredy submitted
-                                
-                                        sh_script = f'{sh_dir}/buddy.sh'
-                                        with open (sh_script,'w') as sh:
-
-                                            hpcc_directives = SBATCH(job_id='buddy', partition=partition, nodes=1, ntasks=1, memory='2g', walltime='168:00:00', out_err=oe_dir, conda_env=environment) # specify hpcc directives (slurm)
-                                            sh.write(hpcc_directives)                
-                                            
-                                            sh.write(f'echo BUDDY CALLED `date` \n'+
-                                            f'python {buddy_script} -i {id_file} -d {download_dir} -a {accessions_file}\n') # specify sra buddy script instructions
-                                        
-                                        buddy_id = CAPTURE(f'sbatch {sh_script}') # submit sra buddy
-                                        print(f'SUB BUDDY SUBMITTED ({buddy_id})')
+                                        sh.write(f'echo BUDDY CALLED `date` \n'+
+                                        f'python {buddy_script} -i {id_file} -d {download_dir} -a {accessions_file}\n') # specify sra buddy script instructions
+                                    
+                                    buddy_id = CAPTURE(f'sbatch {sh_script}') # submit sra buddy
+                                    print(f'SUB BUDDY SUBMITTED ({buddy_id})')
 
