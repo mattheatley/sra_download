@@ -1,4 +1,4 @@
-import os, sys, subprocess
+import os, sys, subprocess, time
 
 def CAPTURE(cmd): return subprocess.run(f'{cmd}', shell=True, capture_output=True).stdout.decode('utf-8').strip(' \n') # capture & format terminal output
 
