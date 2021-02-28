@@ -44,7 +44,7 @@ Run stage 1 to download sra files via SRA Toolkit's prefetch command.
 
 	python sra_pipe.py -stage 1
 
-N.B. sometimes downloads will encounter a "Cannot KStreamRead" error; submitting with the optional "-buddy" flag will also submit sra_buddy.py that regularly monitors tasks & automatically re-submits those that fail because of this.
+N.B. sometimes downloads will encounter a "Cannot KStreamRead" error; submitting with the optional "-buddy" flag will also submit sra_buddy.py that regularly monitors tasks & automatically re-submits those that fail due to this.
 
 
 
