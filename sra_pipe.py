@@ -46,7 +46,7 @@ system_script, *arguments = sys.argv
 error_no_files = '\n*** ERROR: Problem finding {}. ***\n'
 
 if memory and (sum(memory.count(unit) for unit in ['k','m','g','t']) != 1 or not memory.rstrip('kmgt').isdigit()): parser.error(f"argument -me: invalid str format: '{memory}'") # check memory format
-if walltime and (len(walltime) != 8 or walltime[2:6:3].count(':') != 2 or not walltime.replace(':','').isdigit()): parser.error(f"argument -wt: invalid str format: '{walltime}'") # check walltime format
+if walltime and ( not 8 <= len(walltime) <= 9 or walltime[-6:-2:3].count(':') != 2 or not walltime.replace(':','').isdigit()): parser.error(f"argument -wt: invalid str format: '{walltime}'") # check walltime format
 if submitting_buddy:
     if not os.path.exists(buddy_script): print(error_no_files.format(f'\"{buddy_script}\"')) # check sra buddy script exists
     if stage != 1: print('\nSRA Buddy only for use with stage 1.\n') # check sra buddy only being used when downloading
