@@ -35,7 +35,7 @@ def REVIEW(id_file):
         headers, *sacct_info = [ line.split('|') for line in CAPTURE(f'sacct -p -j {sub_ids}').split('\n') ] # slurm accounting data
         for info in sacct_info:
             sub_id, step, state = [ info[headers.index(column)].strip('+') for column in ['JobID','JobName','State'] ]
-            if not step == 'batch': categories[failed if not state in non_fails else state].add(sub_info[sub_id]) # store task state
+            if not sub_id.endswith(('batch','extern')): categories[failed if not state in non_fails else state].add(sub_info[sub_id]) # store task state
         pending, running, completed, cancelled, failed = categories.values()
         problems = failed.difference( set().union(pending, running, completed) ) # failed but not running (i.e. re-submitted)
         if pending: print(f'\n{len(pending)} task{"s" if len(pending) > 1 else ""} pending.')
