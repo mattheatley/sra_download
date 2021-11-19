@@ -13,12 +13,12 @@ def SBATCH(job_id, partition, nodes, ntasks, memory, walltime, out_err, task=Non
     return '#!/bin/bash\n'+f'{sbatch}\n'+'echo RUNNING ON `hostname`\n'
 
 
-def ezSub(i, user, limit): # auto submission
+def ezSub(i, check, user, limit): # auto submission
     total = int(CAPTURE(f'squeue -u {user} -h | wc -l')) # find current tasks
     if total > limit: 
         print(f'\nSUBMISSION LIMIT REACHED: WAITING TO SUBMIT TASK {i}...')
-        time.sleep(60)
-        ezSub(i, user, limit) # check every 5 mins if task can be submitted
+        time.sleep(check)
+        ezSub(i, check, user, limit) # check every 5 mins if task can be submitted
     else: 
         return # submit task (with dependancy) if possible
 
